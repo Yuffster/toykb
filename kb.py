@@ -116,6 +116,8 @@ class Entity():
     def knows(self, subject=None, rel=None, target=None, certainty=1):
         """ This entity is certain this relationship is true. """
         subject = subject or self.name
+        if self.rejects(subject, rel, target):
+            return False
         result = self.rels(subject, rel, target, certainty)
         if len(result) > 0:
             return True
@@ -131,6 +133,16 @@ class Entity():
         subject = subject or self.name
         return self.knows(subject, rel, target) or \
                self.suspects(subject, rel, target)
+
+    def rejects(self, subject=None, rel=None, target=None):
+        """
+        Entity won't even entertain a notion within global scope if it knows
+        it's false.
+        """
+        subject = subject or self.name
+        rejection = self.local(subject, rel, target, 0)
+        if len(rejection) > 0:
+            return True
 
     @property
     def type(self):
@@ -180,7 +192,7 @@ class KnowledgeGraph():
                 continue
             if target and i[1] != target:
                 continue
-            if certainty and i[2] != certainty:
+            if certainty is not None and i[2] != certainty:
                 continue
             out.append(i)
         if len(out) == 0:

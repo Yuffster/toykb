@@ -137,3 +137,18 @@ class KnowlegeTest(unittest.TestCase):
         self.assertEqual(True, h.thinks('claudius', 'kills', 'khamlet'))
         # He no longer SUSPECTS, since his certainty has been upgraded.
         self.assertEqual(False, h.suspects('claudius', 'kills', 'khamlet'))
+
+    def test_knowledge_rejection(self):
+        self.kb.ent('khamlet')
+        self.kb.ent('claudius')
+        self.kb.ent('gertrude')
+        self.kb.ent('hamlet')
+        c = self.kb.get('claudius')
+        g = self.kb.get('gertrude')
+        h = self.kb.get('hamlet')
+        # Claudius kills King Hamlet in broad daylight and everyone knows.
+        self.kb.rel('claudius', 'kills', 'khamlet', 1)
+        # Except Gertrude, she KNOWS her new husband would never.
+        g.rel('claudius', 'kills', 'khamlet', 0)
+        self.assertEqual(True, h.knows('claudius', 'kills', 'khamlet'))
+        self.assertEqual(False, g.knows('claudius', 'kills', 'khamlet'))
