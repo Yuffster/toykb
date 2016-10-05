@@ -17,7 +17,9 @@ class Knowledgebase():
     def get(self, name):
         """ Returns a graph entity. """
         if name not in self._entities:
-            raise EntityNotFound("No entity found with name '{}'".format(name))
+            raise EntityNotFound(
+                "No entity found with name '{}'".format(name)
+            )
         return self._entities[name]
 
     def rel(self, subject, rel, target, certainty=1):
@@ -34,21 +36,26 @@ class Knowledgebase():
         for c in constraints:
             if c[0] is not None and sub.type != c[0]:
                 raise ConstraintException(
-                    "Subject of {} must be of type {}; got entity of type {} instead"
+                    "Subject of {} must be of type {}; got entity of type"
+                    " {} instead"
                     .format(rel, c[0], sub.type)
                 )
             if c[1] is not None and tar.type != c[1]:
                 raise ConstraintException(
-                    "Target of {} must be of type {}; got entity of type {} instead"
+                    "Target of {} must be of type {}; got entity of type "
+                    " {} instead"
                     .format(rel, c[1], tar.type)
                 )
         self._graph.add(sub.name, rel, tar.name, certainty)
 
-    def rels(self, subject=None, rel=None, target=None, certainty=None, scope=None):
+    def rels(self, subject=None, rel=None, target=None, certainty=None, 
+             scope=None):
         """ Returns relationships which meet passed criteria. """
         scope = scope or self._graph
         data = scope.get(subject, rel, target, certainty)
-        inverse = self._get_inverse_rels(subject, rel, target, certainty, scope)
+        inverse = self._get_inverse_rels(
+            subject, rel, target, certainty, scope
+        )
         return join_sets(data, inverse)
 
     def constrain(self, rel, subject=None, target=None):
@@ -65,7 +72,8 @@ class Knowledgebase():
             self._constraints[rel] = []
         return self._constraints[rel]
 
-    def _get_inverse_rels(self, subject=None, rel=None, target=None, certainty=None, scope=None):
+    def _get_inverse_rels(self, subject=None, rel=None, target=None,
+                          certainty=None, scope=None):
         if rel not in self._inverses:
             return None
         inverse_rel = self._inverses[rel]
