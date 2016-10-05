@@ -2,7 +2,7 @@ import unittest
 import kb
 
 
-class DocumentTest(unittest.TestCase):
+class KnowlegeTest(unittest.TestCase):
 
     def setUp(self):
         self.kb = kb.Knowledgebase()
@@ -105,3 +105,35 @@ class DocumentTest(unittest.TestCase):
         result = self.kb.rels(rel='location')
         expected = [('elsinore', 'hamlet', 1), ('paris', 'laertes', 1)]
         self.assertEqual(expected, result)
+
+    def test_knowledge_scoping(self):
+        self.kb.ent('khamlet')
+        self.kb.ent('claudius')
+        self.kb.ent('hamlet')
+        c = self.kb.get('claudius')
+        h = self.kb.get('hamlet')
+        # Claudius secretly kills King Hamlet.
+        c.rel(rel='kills', target='khamlet')
+        # Claudius knows he killed King Hamlet.
+        self.assertEqual(True, c.knows('claudius', 'kills', 'khamlet'))
+        # Complete list of people killed by Claudius.
+        result = c.rels(rel='kills')
+        self.assertEqual([('claudius', 'khamlet', 1)], result)
+        # Hamlet does not know.
+        self.assertEqual(False, h.knows('claudius', 'kills', 'khamlet'))
+        # He doesn't even suspect it.
+        self.assertEqual(False, h.suspects('claudius', 'kills', 'khamlet'))
+        # A ghost shows up, weird.  Certainty is -1; needs to be verified.
+        h.rel('claudius', 'kills', 'khamlet', certainty=-1)
+        # He still doesn't KNOW Claudius killed his father.
+        self.assertEqual(False, h.knows('claudius', 'kills', 'khamlet'))
+        # But he SUSPECTS it.
+        self.assertEqual(True, h.thinks('claudius', 'kills', 'khamlet'))
+        self.assertEqual(True, h.suspects('claudius', 'kills', 'khamlet'))
+        # Then there's a play or something.
+        h.rel('claudius', 'kills', 'khamlet', certainty=1)
+        # Hamlet both knows and thinks Claudius killed his father.
+        self.assertEqual(True, h.knows('claudius', 'kills', 'khamlet'))
+        self.assertEqual(True, h.thinks('claudius', 'kills', 'khamlet'))
+        # He no longer SUSPECTS, since his certainty has been upgraded.
+        self.assertEqual(False, h.suspects('claudius', 'kills', 'khamlet'))

@@ -22,8 +22,9 @@ class Knowledgebase():
             )
         return self._entities[name]
 
-    def rel(self, subject, rel, target, certainty=1):
+    def rel(self, subject, rel, target, certainty=1, scope=None):
         """ Adds a relationship between two objects. """
+        scope = scope or self._graph
         if rel in self._inverses:
             # Invert the relationship if necessary
             sub = self.get(target)
@@ -46,7 +47,7 @@ class Knowledgebase():
                     " {} instead"
                     .format(rel, c[1], tar.type)
                 )
-        self._graph.add(sub.name, rel, tar.name, certainty)
+        scope.add(sub.name, rel, tar.name, certainty)
 
     def rels(self, subject=None, rel=None, target=None, certainty=None, 
              scope=None):
@@ -92,17 +93,44 @@ class Entity():
         self._name = name
         self._kb = parent
         self._graph = KnowledgeGraph()
+        self._shares = []
+
+    def rel(self, subject=None, rel=None, target=None, certainty=1):
+        subject = subject or self.name
+        self._kb.rel(subject, rel, target, certainty, self._graph)
 
     def rels(self, subject=None, rel=None, target=None, certainty=None):
         mine = self._kb.rels(subject, rel, target, certainty, self._graph)
         glob = self._kb.rels(subject, rel, target, certainty)
         return join_sets(mine, glob)
 
+    def local(self, subject=None, rel=None, target=None, certainty=None):
+        return self._kb.rels(subject, rel, target, certainty, self._graph)
+
     def has(self, rel=None, target=None, certainty=None):
-        result = self.rels(self._name, rel, target, certainty)
+        result = self.rels(self.name, rel, target, certainty)
         if len(result) > 0:
             return True
         return False
+
+    def knows(self, subject=None, rel=None, target=None, certainty=1):
+        """ This entity is certain this relationship is true. """
+        subject = subject or self.name
+        result = self.rels(subject, rel, target, certainty)
+        if len(result) > 0:
+            return True
+        return False
+
+    def suspects(self, subject=None, rel=None, target=None):
+        """ This entity suspects but doesn't know relationship is true. """
+        subject = subject or self.name
+        return self.knows(subject, rel, target, -1)
+
+    def thinks(self, subject=None, rel=None, target=None):
+        """ The entity either suspects or knows the relationship is true. """
+        subject = subject or self.name
+        return self.knows(subject, rel, target) or \
+               self.suspects(subject, rel, target)
 
     @property
     def type(self):
@@ -131,9 +159,16 @@ class KnowledgeGraph():
         self._rels = {}
 
     def add(self, subject=None, rel=None, target=None, certainty=1):
-        if rel not in self._rels:
-            self._rels[rel] = []
-        self._rels[rel].append((subject, target, certainty))
+        previous = self.get(subject, rel, target)
+        if previous: # Don't duplicate.
+            for p in previous:
+                self._rels[rel].remove(p)
+                # Update the certainty.
+                self._rels[rel].append((p[0], p[1], certainty))
+        else:
+            if rel not in self._rels:
+                self._rels[rel] = []
+            self._rels[rel].append((subject, target, certainty))
 
     def get(self, subject=None, rel=None, target=None, certainty=None):
         if rel is None or rel not in self._rels:
