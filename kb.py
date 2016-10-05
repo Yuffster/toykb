@@ -100,7 +100,6 @@ class Entity():
 
     def has(self, rel=None, target=None, certainty=None):
         result = self.rels(self._name, rel, target, certainty)
-        print(self.name, 'is', rel, target, result)
         if len(result) > 0:
             return True
         return False
