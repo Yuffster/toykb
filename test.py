@@ -152,3 +152,22 @@ class KnowlegeTest(unittest.TestCase):
         g.rel('claudius', 'kills', 'khamlet', 0)
         self.assertEqual(True, h.knows('claudius', 'kills', 'khamlet'))
         self.assertEqual(False, g.knows('claudius', 'kills', 'khamlet'))
+
+    def test_knowledge_certainty(self):
+        self.kb.ent('khamlet')
+        self.kb.ent('claudius')
+        self.kb.ent('gertrude')
+        self.kb.ent('hamlet')
+        c = self.kb.get('claudius')
+        g = self.kb.get('gertrude')
+        h = self.kb.get('hamlet')
+        # The Ghost tells everyone what happens but he's a guy in a mask.
+        # Everyone is certain this is false.
+        self.kb.rel('claudius', 'kills', 'khamlet', 0)
+        # Except Hamlet, he KNOWS Claudius killed King Hamlet.
+        h.rel('claudius', 'kills', 'khamlet', 1)
+        # Claudius also knows the truth, of course.
+        c.rel('claudius', 'kills', 'khamlet', 1)
+        self.assertEqual(True, h.knows('claudius', 'kills', 'khamlet'))
+        self.assertEqual(True, c.knows('claudius', 'kills', 'khamlet'))
+        self.assertEqual(False, g.knows('claudius', 'kills', 'khamlet'))

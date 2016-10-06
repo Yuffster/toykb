@@ -118,6 +118,8 @@ class Entity():
         subject = subject or self.name
         if self.rejects(subject, rel, target):
             return False
+        if self.certain(subject, rel, target):
+            return True
         result = self.rels(subject, rel, target, certainty)
         if len(result) > 0:
             return True
@@ -142,6 +144,16 @@ class Entity():
         subject = subject or self.name
         rejection = self.local(subject, rel, target, 0)
         if len(rejection) > 0:
+            return True
+
+    def certain(self, subject=None, rel=None, target=None):
+        """
+        Entity won't even entertain a notion within global scope if it knows
+        it's true.
+        """
+        subject = subject or self.name
+        sure = self.local(subject, rel, target, 0)
+        if len(sure) > 0:
             return True
 
     @property
